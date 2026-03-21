@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import { Notebook, NotebookEntry, Source, CitationFormat } from '@/types';
+import { Notebook, NotebookEntry, Source, CitationFormat, SavedThesis, ThesisAngle, ChatMessage } from '@/types';
 
 const STORAGE_KEY = 'reaves-notebooks';
 
@@ -19,6 +19,9 @@ interface NotebookContextValue {
   updateEntryNote: (entryId: string, note: string) => void;
   updateEntryFormat: (entryId: string, format: CitationFormat) => void;
   isSourceSaved: (sourceId: string) => boolean;
+  saveThesis: (angle: ThesisAngle) => void;
+  removeThesis: (thesisId: string) => void;
+  updateThesisChat: (thesisId: string, messages: ChatMessage[]) => void;
 }
 
 const NotebookContext = createContext<NotebookContextValue | null>(null);
@@ -40,7 +43,12 @@ export function NotebookProvider({ children }: { children: ReactNode }) {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored) as { notebooks: Notebook[]; activeId: string | null };
-        setNotebooks(parsed.notebooks || []);
+        // Migrate legacy notebooks that don't have saved_theses yet
+        const migrated = (parsed.notebooks || []).map((nb) => ({
+          ...nb,
+          saved_theses: nb.saved_theses || [],
+        }));
+        setNotebooks(migrated);
         setActiveNotebookId(parsed.activeId || null);
       }
     } catch { /* empty */ }
@@ -63,6 +71,7 @@ export function NotebookProvider({ children }: { children: ReactNode }) {
       name,
       description,
       entries: [],
+      saved_theses: [],
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
@@ -133,6 +142,44 @@ export function NotebookProvider({ children }: { children: ReactNode }) {
     return activeNotebook.entries.some((e) => e.source.id === sourceId);
   }, [activeNotebook]);
 
+  const mutateTheses = useCallback((fn: (theses: SavedThesis[]) => SavedThesis[]) => {
+    setNotebooks((prev) =>
+      prev.map((n) =>
+        n.id === activeNotebookId
+          ? { ...n, saved_theses: fn(n.saved_theses || []), updated_at: new Date().toISOString() }
+          : n
+      )
+    );
+  }, [activeNotebookId]);
+
+  const saveThesis = useCallback((angle: ThesisAngle) => {
+    if (!activeNotebookId) return;
+    mutateTheses((theses) => {
+      // Avoid duplicate saves
+      if (theses.some((t) => t.thesis === angle.thesis)) return theses;
+      const saved: SavedThesis = {
+        id: `th-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        thesis: angle.thesis,
+        stance: angle.stance,
+        gap_it_fills: angle.gap_it_fills,
+        supporting_sources: angle.supporting_sources || [],
+        saved_at: new Date().toISOString(),
+        chat_history: [],
+      };
+      return [...theses, saved];
+    });
+  }, [activeNotebookId, mutateTheses]);
+
+  const removeThesis = useCallback((thesisId: string) => {
+    mutateTheses((theses) => theses.filter((t) => t.id !== thesisId));
+  }, [mutateTheses]);
+
+  const updateThesisChat = useCallback((thesisId: string, messages: ChatMessage[]) => {
+    mutateTheses((theses) =>
+      theses.map((t) => t.id === thesisId ? { ...t, chat_history: messages } : t)
+    );
+  }, [mutateTheses]);
+
   return (
     <NotebookContext.Provider
       value={{
@@ -149,6 +196,9 @@ export function NotebookProvider({ children }: { children: ReactNode }) {
         updateEntryNote,
         updateEntryFormat,
         isSourceSaved,
+        saveThesis,
+        removeThesis,
+        updateThesisChat,
       }}
     >
       {children}

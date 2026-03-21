@@ -4,10 +4,12 @@ import { useState } from 'react';
 import Link from 'next/link';
 import {
   ArrowLeft, BookOpen, ChevronDown, Plus, Search,
-  Trash2, Pencil, Check, X, ExternalLink
+  Trash2, Pencil, Check, X, ExternalLink, MessageSquare, BookMarked
 } from 'lucide-react';
 import NotebookPanel from '@/components/notebook/NotebookPanel';
 import ThesisBuilder from '@/components/notebook/ThesisBuilder';
+import NotebookChat from '@/components/notebook/NotebookChat';
+import SavedThesesPanel from '@/components/notebook/SavedThesesPanel';
 import { useNotebooks } from '@/lib/notebook-context';
 import { CitationFormat, Notebook } from '@/types';
 import { cn } from '@/lib/utils';
@@ -152,6 +154,8 @@ function NotebookCard({
 // ── Detail view for a single open notebook ────────────────────────────────────
 function NotebookDetail({ notebook, onBack }: { notebook: Notebook; onBack: () => void }) {
   const { removeEntry, updateEntryTag, updateEntryNote, updateEntryFormat } = useNotebooks();
+  const [tab, setTab] = useState<'sources' | 'chat' | 'theses' | 'builder'>('sources');
+  const savedTheses = notebook.saved_theses || [];
 
   return (
     <div className="space-y-6">
@@ -175,6 +179,7 @@ function NotebookDetail({ notebook, onBack }: { notebook: Notebook; onBack: () =
             {notebook.entries.length === 0
               ? 'No sources saved yet'
               : `${notebook.entries.length} saved source${notebook.entries.length !== 1 ? 's' : ''}`}
+            {savedTheses.length > 0 && ` · ${savedTheses.length} saved ${savedTheses.length === 1 ? 'thesis' : 'theses'}`}
           </p>
         </div>
       </div>
@@ -193,8 +198,66 @@ function NotebookDetail({ notebook, onBack }: { notebook: Notebook; onBack: () =
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-          <div>
+        <div className="space-y-4">
+          {/* Tabs */}
+          <div className="flex items-center gap-1 p-1 bg-white/3 border border-white/8 rounded-xl w-fit flex-wrap">
+            <button
+              onClick={() => setTab('sources')}
+              className={cn(
+                'px-4 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5',
+                tab === 'sources'
+                  ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/20'
+                  : 'text-white/40 hover:text-white/70 hover:bg-white/5'
+              )}
+            >
+              <BookOpen className="h-3.5 w-3.5" />
+              Sources
+            </button>
+            <button
+              onClick={() => setTab('chat')}
+              className={cn(
+                'px-4 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5',
+                tab === 'chat'
+                  ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/20'
+                  : 'text-white/40 hover:text-white/70 hover:bg-white/5'
+              )}
+            >
+              <MessageSquare className="h-3.5 w-3.5" />
+              Chat
+            </button>
+            <button
+              onClick={() => setTab('theses')}
+              className={cn(
+                'px-4 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5',
+                tab === 'theses'
+                  ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/20'
+                  : 'text-white/40 hover:text-white/70 hover:bg-white/5'
+              )}
+            >
+              <BookMarked className="h-3.5 w-3.5" />
+              Theses
+              {savedTheses.length > 0 && (
+                <span className="h-4 min-w-[16px] px-1 rounded-full bg-violet-500/30 text-[10px] text-violet-200 flex items-center justify-center font-bold">
+                  {savedTheses.length}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => setTab('builder')}
+              className={cn(
+                'px-4 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5',
+                tab === 'builder'
+                  ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/20'
+                  : 'text-white/40 hover:text-white/70 hover:bg-white/5'
+              )}
+            >
+              <Pencil className="h-3.5 w-3.5" />
+              Builder
+            </button>
+          </div>
+
+          {/* Tab content */}
+          {tab === 'sources' && (
             <NotebookPanel
               entries={notebook.entries}
               onRemove={removeEntry}
@@ -202,15 +265,25 @@ function NotebookDetail({ notebook, onBack }: { notebook: Notebook; onBack: () =
               onUpdateNote={updateEntryNote}
               onFormatChange={(id, format: CitationFormat) => updateEntryFormat(id, format)}
             />
-          </div>
-          <div className="lg:sticky lg:top-20">
+          )}
+
+          {tab === 'chat' && (
+            <NotebookChat entries={notebook.entries} notebookName={notebook.name} />
+          )}
+
+          {tab === 'theses' && (
+            <SavedThesesPanel theses={savedTheses} entries={notebook.entries} />
+          )}
+
+          {tab === 'builder' && (
             <ThesisBuilder entries={notebook.entries} topic={notebook.name} />
-          </div>
+          )}
         </div>
       )}
     </div>
   );
 }
+
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function NotebookPage() {

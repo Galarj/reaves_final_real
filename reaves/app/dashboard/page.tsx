@@ -2,12 +2,11 @@
 
 import { useState, useCallback } from 'react';
 import Link from 'next/link';
-import { BookOpen, Home, Loader2, AlertCircle, Plus, ChevronDown } from 'lucide-react';
+import { BookOpen, Home, Loader2, AlertCircle, Plus, ChevronDown, Sparkles, RefreshCw } from 'lucide-react';
 import SearchBar from '@/components/search/SearchBar';
 import ClarifierCard from '@/components/search/ClarifierCard';
 import SourceCard from '@/components/results/SourceCard';
 import SynthesisPanel from '@/components/results/SynthesisPanel';
-import GapDetector from '@/components/results/GapDetector';
 import NotebookPanel from '@/components/notebook/NotebookPanel';
 import ThesisBuilder from '@/components/notebook/ThesisBuilder';
 import { useNotebooks } from '@/lib/notebook-context';
@@ -25,6 +24,7 @@ export default function DashboardPage() {
   const [showNotebook, setShowNotebook] = useState(false);
   const [biasLoadingIds, setBiasLoadingIds] = useState<Set<string>>(new Set());
   const [simplifyLoadingIds, setSimplifyLoadingIds] = useState<Set<string>>(new Set());
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [showNbPicker, setShowNbPicker] = useState(false);
   const [newNbName, setNewNbName] = useState('');
 
@@ -104,6 +104,39 @@ export default function DashboardPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch sources. Please try again.');
       setStep('error');
+    }
+  };
+
+  const handleLoadMore = async () => {
+    if (step !== 'results' || !searchResult || isLoadingMore) return;
+    setIsLoadingMore(true);
+    const offset = searchResult.sources.length;
+
+    try {
+      const res = await fetch('/api/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          refined_query: currentQuery,
+          offset,
+          limit: 5,
+        }),
+      });
+
+      if (!res.ok) throw new Error('Failed to load more');
+      const data: SearchResult = await res.json();
+
+      setSearchResult((prev) => {
+        if (!prev) return data;
+        return {
+          ...prev,
+          sources: [...prev.sources, ...data.sources],
+        };
+      });
+    } catch (err) {
+      console.error('[LoadMore]', err);
+    } finally {
+      setIsLoadingMore(false);
     }
   };
 
@@ -276,16 +309,6 @@ export default function DashboardPage() {
                     <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-[12px] overflow-hidden">
                       <SynthesisPanel result={searchResult} query={currentQuery} />
                     </div>
-
-                    {/* Research Gap Detector — amber accent */}
-                    {searchResult.research_gaps?.length > 0 && (
-                      <div className="rounded-2xl border border-white/10 border-l-2 border-l-amber-500/40 bg-white/5 backdrop-blur-[12px] overflow-hidden">
-                        <GapDetector
-                          gaps={searchResult.research_gaps}
-                          onResearch={handleSearch}
-                        />
-                      </div>
-                    )}
                   </div>
 
                   {/* ── Left Column: Source Cards ── */}
@@ -305,6 +328,22 @@ export default function DashboardPage() {
                         isSimplifying={simplifyLoadingIds.has(source.id)}
                       />
                     ))}
+
+                    {/* More button */}
+                    <div className="pt-2 flex justify-center">
+                      <button
+                        onClick={handleLoadMore}
+                        disabled={isLoadingMore}
+                        className="group flex items-center gap-2 px-6 py-3 rounded-2xl border border-white/10 bg-white/3 hover:bg-white/5 hover:border-violet-500/30 text-sm font-medium text-white/40 hover:text-white/80 transition-all duration-300 disabled:opacity-50"
+                      >
+                        {isLoadingMore ? (
+                          <RefreshCw className="h-4 w-4 animate-spin text-violet-400" />
+                        ) : (
+                          <Sparkles className="h-4 w-4 text-violet-400/60 group-hover:text-violet-400 transition-colors" />
+                        )}
+                        {isLoadingMore ? 'Generating more...' : 'More Outcomes'}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>

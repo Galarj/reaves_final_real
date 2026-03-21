@@ -43,35 +43,6 @@
     if (text.length >= 5) {
       showBubble(text, rect);
     }
-
-    // ── B. Smart Glossary timer (max 5 words) ──
-    var wordCount = text.split(/\s+/).length;
-    if (wordCount <= 5) {
-      // Snapshot rect values (DOMRect is live, clone the numbers we need)
-      var capturedTop    = rect.top;
-      var capturedLeft   = rect.left;
-      var capturedWidth  = rect.width;
-      var capturedHeight = rect.height;
-
-      glossaryTimer = setTimeout(function () {
-        // Guard: selection must still match
-        var currentSel = window.getSelection();
-        var currentText = currentSel ? currentSel.toString().trim() : '';
-        if (currentText !== text) return;
-
-        // Check toggle flag before showing popup
-        chrome.storage.local.get(['glossaryEnabled'], function (result) {
-          // Default to ON if not yet set
-          if (result.glossaryEnabled === false) return;
-          showGlossaryPopup(text, {
-            top:    capturedTop,
-            left:   capturedLeft,
-            width:  capturedWidth,
-            height: capturedHeight,
-          });
-        });
-      }, 1500);
-    }
   });
 
   // Dismiss everything on click or scroll
@@ -127,10 +98,26 @@
     bubble.addEventListener('mousedown', function (e) {
       e.preventDefault();
       e.stopPropagation();
+    });
+
+    bubble.addEventListener('mouseup', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      
       chrome.runtime.sendMessage({ type: 'OPEN_SIDEBAR', text: text }, function () {
         if (chrome.runtime.lastError) { /* sidebar may not be open yet — ok */ }
       });
+      
       removeBubble();
+      
+      // If the word is short, ALSO trigger the Smart Glossary looking up definition immediately
+      var wordCount = text.split(/\s+/).length;
+      if (wordCount <= 5) {
+        chrome.storage.local.get(['glossaryEnabled'], function (result) {
+          if (result.glossaryEnabled === false) return; // respect toggle
+          showGlossaryPopup(text, rect);
+        });
+      }
     });
 
     document.body.appendChild(bubble);
@@ -148,6 +135,7 @@
   // ════════════════════════════════════════════════════════════════════════════
   function showGlossaryPopup(word, rect) {
     removeGlossaryPopup();
+    removeBubble(); // Pause the Ask REAVES bubble while fetching
 
     var POPUP_W = 280;
     var top  = window.scrollY + rect.top - 6;
@@ -184,8 +172,19 @@
 
       if (!glossaryPopup) return; // user clicked away while loading
 
+      if (response && response.error) {
+        if (glossaryPopup) {
+          glossaryPopup.innerHTML = '<span class="reaves-popup-error">Error: ' + escapeHtml(response.error) + '</span>';
+        }
+        return;
+      }
+
       if (!response || !response.short_definition) {
         removeGlossaryPopup(); // nothing useful to show
+        // Restore the Ask REAVES bubble if the word was valid length
+        if (word && word.length >= 5) {
+          showBubble(word, rect);
+        }
         return;
       }
 

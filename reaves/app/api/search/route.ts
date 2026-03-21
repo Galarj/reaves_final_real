@@ -7,7 +7,7 @@ import { SearchResult } from '@/types';
 
 export async function POST(req: NextRequest) {
   try {
-    const { refined_query } = await req.json();
+    const { refined_query, offset = 0, limit = 10 } = await req.json();
 
     if (!refined_query || typeof refined_query !== 'string') {
       return NextResponse.json({ error: 'refined_query is required' }, { status: 400 });
@@ -20,7 +20,9 @@ export async function POST(req: NextRequest) {
     }
 
     // Step 1: Fetch real academic papers concurrently from Semantic Scholar + PubMed
-    const rawPapers = await fetchAllAcademicSources(refined_query, 10);
+    // Adjust limit for "load more" if offset is present, default to 5 more
+    const fetchLimit = offset > 0 ? (limit || 5) : limit;
+    const rawPapers = await fetchAllAcademicSources(refined_query, fetchLimit, offset);
 
     // Step 2: Serialize raw papers for Claude — include all trust_factors so the
     //         scoring prompt can apply its rubric to real data
@@ -58,7 +60,6 @@ ${JSON.stringify(papersPayload, null, 2)}`;
       synthesis: typeof raw.synthesis === 'string' ? raw.synthesis : '',
       agreements: Array.isArray(raw.agreements) ? raw.agreements : [],
       conflicts: Array.isArray(raw.conflicts) ? raw.conflicts : [],
-      research_gaps: Array.isArray(raw.research_gaps) ? raw.research_gaps : [],
     };
 
     return NextResponse.json(result);

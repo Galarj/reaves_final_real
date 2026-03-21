@@ -54,13 +54,7 @@ Some fields may be empty strings or 0. Use judgment — an empty abstract from P
   ],
   "synthesis": "3–5 sentence synthesis of the overall body of literature. Identify the dominant consensus, major themes, and state of evidence.",
   "agreements": ["4–6 short consensus points, max 10 words each"],
-  "conflicts": ["3–5 short points of debate or tension, max 10 words each"],
-  "research_gaps": [
-    {
-      "gap": "Specific unanswered question from the literature (max 15 words)",
-      "angle": "Concrete methodological or investigative angle to address it (max 15 words)"
-    }
-  ]
+  "conflicts": ["3–5 short points of debate or tension, max 10 words each"]
 }
 
-Return exactly 3 research_gaps. Trust scores must be realistic, varied, and reflect actual paper quality. Never return identical scores. JSON only.`;
+Return trust scores that are realistic, varied, and reflect actual paper quality. Never return identical scores. JSON only.`;

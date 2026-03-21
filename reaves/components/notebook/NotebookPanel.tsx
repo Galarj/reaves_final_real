@@ -12,7 +12,7 @@ const CompareDialog = dynamic(() => import('./CompareDialog'), {
   // Optional: show a darkened backdrop while it loads
   loading: () => <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[9999]" />
 });
-import { BookOpen, Trash2, Tag, StickyNote, ChevronDown, ChevronUp, SplitSquareHorizontal } from 'lucide-react';
+import { BookOpen, Trash2, Tag, StickyNote, ChevronDown, ChevronUp, SplitSquareHorizontal, FileText, Loader2 } from 'lucide-react';
 
 const TAGS = ['Untagged', 'Key Source', 'Background', 'Methodology', 'Contradicts', 'Supports'];
 
@@ -36,6 +36,7 @@ export default function NotebookPanel({
   // NEW STATE: For the Side-by-Side Comparison Feature
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isComparing, setIsComparing] = useState(false);
+  const [generatingId, setGeneratingId] = useState<string | null>(null);
 
   const toggleSelection = (id: string) => {
     setSelectedIds((prev) => {
@@ -43,6 +44,34 @@ export default function NotebookPanel({
       if (prev.length >= 3) return prev; // Enforce max 3 limit
       return [...prev, id];
     });
+  };
+
+  const generateReport = async (entry: NotebookEntry) => {
+    setGeneratingId(entry.id);
+    try {
+      const res = await fetch('/api/notebook-report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          source: entry.source,
+          userNote: entry.user_note,
+          tag: entry.tag,
+        }),
+      });
+      if (!res.ok) throw new Error('Report API failed');
+      const data = await res.json();
+      const summaryText: string = data.summary || 'No summary generated.';
+
+      // Dynmically import the PDF service ONLY here.
+      // This keeps jspdf/fflate out of the SSR bundle entirely.
+      const { exportSourceAsPdf } = await import('@/lib/pdf-export');
+      await exportSourceAsPdf(entry, summaryText);
+    } catch (err) {
+      console.error('Report generation failed:', err);
+      alert('Failed to generate report. Please try again.');
+    } finally {
+      setGeneratingId(null);
+    }
   };
 
   if (entries.length === 0) {
@@ -128,6 +157,18 @@ export default function NotebookPanel({
 
               {/* Actions */}
               <div className="flex items-center gap-1">
+                <button
+                  onClick={() => generateReport(entry)}
+                  disabled={generatingId === entry.id}
+                  className="p-1.5 rounded-lg text-white/30 hover:text-emerald-400 hover:bg-emerald-500/10 transition-all disabled:opacity-40"
+                  title="Generate PDF Report"
+                >
+                  {generatingId === entry.id ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <FileText className="h-3.5 w-3.5" />
+                  )}
+                </button>
                 <button
                   onClick={() => setExpandedId(isExpanded ? null : entry.id)}
                   className="p-1.5 rounded-lg text-white/30 hover:text-white/60 hover:bg-white/5 transition-all"

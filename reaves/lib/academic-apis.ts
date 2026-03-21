@@ -12,13 +12,13 @@ export interface SemanticScholarPaper {
   abstract: string;
 }
 
-export async function searchSemanticScholar(query: string, limit = 5): Promise<Partial<Source>[]> {
+export async function searchSemanticScholar(query: string, limit = 5, offset = 0): Promise<Partial<Source>[]> {
   const apiKey = process.env.SEMANTIC_SCHOLAR_API_KEY;
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (apiKey) headers['x-api-key'] = apiKey;
 
   const fields = 'paperId,title,authors,year,venue,citationCount,isOpenAccess,externalIds,abstract';
-  const url = `https://api.semanticscholar.org/graph/v1/paper/search?query=${encodeURIComponent(query)}&limit=${limit}&fields=${fields}`;
+  const url = `https://api.semanticscholar.org/graph/v1/paper/search?query=${encodeURIComponent(query)}&limit=${limit}&offset=${offset}&fields=${fields}`;
 
   try {
     const res = await fetch(url, { headers, next: { revalidate: 300 } });
@@ -48,9 +48,9 @@ export async function searchSemanticScholar(query: string, limit = 5): Promise<P
   }
 }
 
-export async function searchPubMed(query: string, limit = 5): Promise<Partial<Source>[]> {
+export async function searchPubMed(query: string, limit = 5, offset = 0): Promise<Partial<Source>[]> {
   try {
-    const searchUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(query)}&retmax=${limit}&retmode=json`;
+    const searchUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(query)}&retmax=${limit}&retstart=${offset}&retmode=json`;
     const searchRes = await fetch(searchUrl, { next: { revalidate: 300 } });
     if (!searchRes.ok) return [];
 
@@ -103,13 +103,14 @@ export type RawPaperData = Partial<Source>;
  */
 export async function fetchAllAcademicSources(
   query: string,
-  limit = 10
+  limit = 10,
+  offset = 0
 ): Promise<RawPaperData[]> {
   const perSource = Math.ceil(limit / 2);
 
   const [ssResults, pmResults] = await Promise.allSettled([
-    searchSemanticScholar(query, perSource),
-    searchPubMed(query, perSource),
+    searchSemanticScholar(query, perSource, offset),
+    searchPubMed(query, perSource, offset),
   ]);
 
   const ss = ssResults.status === 'fulfilled' ? ssResults.value : [];

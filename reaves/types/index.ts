@@ -32,17 +32,13 @@ export interface Source {
   simplified_abstract?: string;
 }
 
-export interface ResearchGap {
-  gap: string;
-  angle: string;
-}
+
 
 export interface SearchResult {
   sources: Source[];
   synthesis: string;
   agreements: string[];
   conflicts: string[];
-  research_gaps: ResearchGap[];
 }
 
 export interface ClarifierResponse {
@@ -74,11 +70,22 @@ export interface NotebookEntry {
   citation_format: CitationFormat;
 }
 
+export interface SavedThesis {
+  id: string;
+  thesis: string;
+  stance: string;
+  gap_it_fills: string;
+  supporting_sources: string[];
+  saved_at: string;
+  chat_history: ChatMessage[];
+}
+
 export interface Notebook {
   id: string;
   name: string;
   description: string;
   entries: NotebookEntry[];
+  saved_theses: SavedThesis[];
   created_at: string;
   updated_at: string;
 }
@@ -109,4 +116,13 @@ export interface EvidenceResponse {
   confidence_score: number;
   location_context: string;
   status: 'success' | 'no_evidence_found';
+}
+
+export interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export interface ReportResponse {
+  summary: string;
 }

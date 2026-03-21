@@ -147,11 +147,6 @@ export function getMockSearchResult(query: string): SearchResult {
         'Causality vs. correlation debate remains open',
         'Cultural variation in effects across countries',
       ],
-      research_gaps: [
-        { gap: 'Longitudinal studies on TikTok-specific effects', angle: 'Track cohort of TikTok users over 2+ years measuring attention and mood' },
-        { gap: 'Intervention effectiveness for digital literacy programs', angle: 'RCT comparing school-based digital wellness curricula' },
-        { gap: 'Neurodevelopmental mechanisms linking screen time to adolescent brain changes', angle: 'fMRI studies of reward pathway activation during social media use' },
-      ],
     };
   }
 
@@ -232,11 +227,6 @@ export function getMockSearchResult(query: string): SearchResult {
         'Acceptable thresholds for off-target editing rates',
         'Regulatory approaches vary significantly by country',
       ],
-      research_gaps: [
-        { gap: 'CRISPR delivery systems for solid tumors beyond blood cancers', angle: 'Lipid nanoparticle delivery of Cas9 to tumor microenvironment' },
-        { gap: 'Long-term outcomes (5+ years) of CRISPR-treated patients', angle: 'Extended follow-up cohorts from Phase I trials' },
-        { gap: 'Combination strategies: CRISPR + immunotherapy + chemotherapy', angle: 'Multi-arm clinical trials comparing combination approaches' },
-      ],
     };
   }
 
@@ -315,11 +305,6 @@ export function getMockSearchResult(query: string): SearchResult {
       'AI tools: helpful or detrimental to learning?',
       'Optimal balance of efficiency vs. rigor',
       'Whether current reforms are sufficient',
-    ],
-    research_gaps: [
-      { gap: 'Long-term effects of AI research tools on student learning', angle: 'Longitudinal cohort tracking students using AI assistants through degree' },
-      { gap: 'Cross-cultural validity of research literacy frameworks', angle: 'Comparative study across universities in 10+ countries' },
-      { gap: 'Optimal integration of AI tools into research methods courses', angle: 'RCT comparing AI-augmented vs. traditional research instruction' },
     ],
   };
 }
