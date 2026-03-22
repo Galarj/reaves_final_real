@@ -1,6 +1,6 @@
 /**
  * Notebook bridge — reads/writes the REAVES web app's localStorage
- * via chrome.scripting.executeScript into an open localhost:3000 tab.
+ * via chrome.scripting.executeScript into an open REAVES Cloud tab.
  *
  * This keeps the extension and web app notebooks perfectly in sync
  * without needing any API endpoint or Supabase.
@@ -9,7 +9,7 @@
 import type { Notebook } from './types';
 
 const STORAGE_KEY = 'reaves-notebooks';
-const REAVES_ORIGINS = ['http://localhost:3000', 'https://localhost:3000', 'https://reaves-f-mol1-3isvuqyw6-galarjs-projects.vercel.app'];
+const REAVES_ORIGINS = ['https://reaves-f-mol1-3isvuqyw6-galarjs-projects.vercel.app'];
 
 interface NotebookState {
   notebooks: Notebook[];

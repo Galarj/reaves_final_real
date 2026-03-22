@@ -9,8 +9,8 @@
  */
 
 // Production API base — hardcoded because background.js is NOT processed by Vite.
-// For local development, change this to 'http://localhost:3000'.
 const WEB_APP_BASE = 'https://reaves-f-mol1-3isvuqyw6-galarjs-projects.vercel.app';
+console.log('[REAVES] Service Worker loaded. API target:', WEB_APP_BASE);
 
 // ─── Smart Glossary: instant lookup table ─────────────────────────────────────
 // Matched by lowercase key. Returns the same shape as /api/define.
@@ -83,7 +83,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const { endpoint, method = 'POST', body } = message;
     chrome.storage.session.get('authToken').then(async (result) => {
       try {
-        const res = await fetch(`${WEB_APP_BASE}${endpoint}`, {
+        const fullUrl = `${WEB_APP_BASE}${endpoint}`;
+        console.log(`[REAVES] Fetching: ${fullUrl}`);
+        const res = await fetch(fullUrl, {
           method,
           headers: {
             'Content-Type': 'application/json',
@@ -171,11 +173,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   // ── Google Search Grader (CSP bypass) ────────────────────────────────────────
-  // google_grader.js can't fetch localhost directly due to Google's CSP.
+  // google_grader.js can't fetch directly due to Google's CSP.
   // This handler proxies the request through the background service worker.
   if (type === 'GRADE_SEARCH_RESULT') {
     const { title = '', url = '', snippet = '' } = message.payload || {};
-    fetch(`${WEB_APP_BASE}/api/grade`, {
+    const fullUrl = `${WEB_APP_BASE}/api/grade`;
+    console.log(`[REAVES] Fetching: ${fullUrl}`);
+    fetch(fullUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title, url, snippet }),
