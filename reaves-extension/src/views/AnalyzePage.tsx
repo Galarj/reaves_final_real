@@ -150,7 +150,7 @@ export default function AnalyzePage() {
 
       const answer = res.ok && res.data?.answer
         ? res.data.answer
-        : 'Connecting to REAVES Cloud... Please check your internet connection.';
+        : 'REAVES Cloud Syncing... Please verify your connection.';
 
       const aiMsg: Message = { id: uid(), role: 'assistant', text: answer, mode };
       setMessages((prev) => [...prev, aiMsg]);

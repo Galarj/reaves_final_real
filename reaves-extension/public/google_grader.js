@@ -393,7 +393,7 @@
               "\u26A0\uFE0F",
               "ERROR",
               null,
-              "Connecting to REAVES Cloud... Please check your internet connection.",
+              "REAVES Cloud Syncing... Please verify your connection.",
             );
           } else if (fallbackEl) {
             fallbackEl.style.background = "rgba(82, 82, 91, 0.7)";

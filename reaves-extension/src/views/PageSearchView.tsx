@@ -98,7 +98,7 @@ export default function PageSearchView() {
       });
 
       if (!res.ok || !res.data) {
-        setError('Connecting to REAVES Cloud... Please check your internet connection.');
+        setError('REAVES Cloud Syncing... Please verify your connection.');
         setStep('idle');
         return;
       }
