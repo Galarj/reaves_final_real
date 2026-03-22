@@ -59,7 +59,7 @@ export default function HomePage() {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-violet-500/25 bg-violet-500/10 text-sm text-violet-300 animate-fadeInUp">
             <Sparkles className="h-3.5 w-3.5" />
-            Powered by Claude AI · HackFest 2026: Axis
+            Brought to you by Los Oliver Lakers · HackFest 2026: Axis
           </div>
 
           {/* Headline */}
