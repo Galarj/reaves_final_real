@@ -25,7 +25,7 @@ export async function callClaude(systemPrompt: string, userMessage: string): Pro
       // Initialize the client dynamically with the current key
       const genAI = new GoogleGenerativeAI(apiKeys[i]);
       const model = genAI.getGenerativeModel({
-        model: 'gemini-2.0-flash',
+        model: 'gemini-1.5-flash',
         systemInstruction: systemPrompt,
         generationConfig: {
           temperature: 0.2,
@@ -41,8 +41,14 @@ export async function callClaude(systemPrompt: string, userMessage: string): Pro
       break; // It worked! Stop the loop.
 
     } catch (error: any) {
-      console.warn(`[lib/anthropic] Key #${i + 1} failed: ${error.message}. Cascading...`);
-      // Loop automatically continues to the next key
+      const msg = error.message || '';
+      // FATAL: Developer errors — stop immediately, don't waste other keys
+      if (msg.includes('404') || msg.includes('403')) {
+        console.error(`[lib/anthropic] FATAL on Key #${i + 1}: ${msg}`);
+        throw error;
+      }
+      // TRANSIENT: 429 (quota) or 503 (overload) — cascade to next key
+      console.warn(`[lib/anthropic] Key #${i + 1} failed (${msg}). Cascading...`);
     }
   }
 

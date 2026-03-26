@@ -56,7 +56,7 @@ SUPPORTING SOURCES: ${(thesis?.supporting_sources || []).join(', ')}
         // Initialize Gemini dynamically with the current key
         const genAI = new GoogleGenerativeAI(apiKeys[i]);
         const model = genAI.getGenerativeModel({
-          model: 'gemini-2.5-flash',
+          model: 'gemini-1.5-flash',
           systemInstruction: systemPrompt,
           generationConfig: { temperature: 0.5 },
         });
@@ -69,8 +69,14 @@ SUPPORTING SOURCES: ${(thesis?.supporting_sources || []).join(', ')}
         break; // Stop the loop on success
 
       } catch (error: any) {
-        console.warn(`[/api/thesis-chat] Key #${i + 1} failed: ${error.message}. Cascading...`);
-        // Loop automatically continues to the next backup key
+        const msg = error.message || '';
+        // FATAL: Developer errors — stop immediately, don't waste other keys
+        if (msg.includes('404') || msg.includes('403')) {
+          console.error(`[/api/thesis-chat] FATAL on Key #${i + 1}: ${msg}`);
+          throw error;
+        }
+        // TRANSIENT: 429 (quota) or 503 (overload) — cascade to next key
+        console.warn(`[/api/thesis-chat] Key #${i + 1} failed (${msg}). Cascading...`);
       }
     }
 

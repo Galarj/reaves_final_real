@@ -54,7 +54,7 @@ ${s.tag ? `Tag: ${s.tag}` : ''}`
         // Initialize Gemini with the current key in the loop
         const genAI = new GoogleGenerativeAI(apiKeys[i]);
         const model = genAI.getGenerativeModel({
-          model: 'gemini-2.5-flash',
+          model: 'gemini-1.5-flash',
           systemInstruction: systemPrompt,
           generationConfig: { temperature: 0.5 },
         });
@@ -67,8 +67,14 @@ ${s.tag ? `Tag: ${s.tag}` : ''}`
         break; // It worked! Stop the loop.
 
       } catch (error: any) {
-        console.warn(`[/api/notebook-chat] Key #${i + 1} failed: ${error.message}. Cascading...`);
-        // Loop automatically continues to the next key
+        const msg = error.message || '';
+        // FATAL: Developer errors — stop immediately, don't waste other keys
+        if (msg.includes('404') || msg.includes('403')) {
+          console.error(`[/api/notebook-chat] FATAL on Key #${i + 1}: ${msg}`);
+          throw error;
+        }
+        // TRANSIENT: 429 (quota) or 503 (overload) — cascade to next key
+        console.warn(`[/api/notebook-chat] Key #${i + 1} failed (${msg}). Cascading...`);
       }
     }
 
